@@ -1,0 +1,26 @@
+.sympleModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.sympleModalContent {
+    padding: 2rem;
+    background: white;
+    border-radius: 1rem;
+    min-width: 25rem;
+    cursor:default;
+    pointer-events: auto;
+}
+.sympleModal_active {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
