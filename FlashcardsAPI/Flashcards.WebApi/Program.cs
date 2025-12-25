@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
+﻿using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Flashcards.Persistence;
 using Flashcards.Application;
 using Flashcards.Application.Common.Mapping;
@@ -9,6 +9,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using Flashcards.WebApi.Services;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,21 +42,67 @@ builder.Services.AddCors(options =>
 builder.Services.AddMvc();
 builder.Services.AddSingleton<ICurrentUserService, CurrentUserService>();
 builder.Services.AddHttpContextAccessor();
-
 builder.Services.AddAuthentication(config =>
 {
     config.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     config.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-    .AddJwtBearer("Bearer", options =>
+.AddJwtBearer("Bearer", options =>
+{
+    var authority = "https://localhost:7050";
+    // Вимикаємо автоматичне завантаження метаданих, бо ми зробимо це вручну
+    // Це прибере помилку "Unable to obtain configuration"
+    options.Authority = authority;
+    options.RequireHttpsMetadata = false;
+
+    // 1. Створюємо клієнт, що ігнорує SSL (як у вашому успішному тесті)
+    var handler = new HttpClientHandler();
+    handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+    using (var httpClient = new HttpClient(handler))
     {
-        options.Authority = "http://localhost:5271";
-        options.Audience = "FlashcardsWebApi";
-        options.RequireHttpsMetadata = false;
+        // 2. ВРУЧНУ завантажуємо ключі прямо тут і зараз
+        // Якщо тут впаде помилка - ми побачимо її при старті програми, а не під час запиту
+        Console.WriteLine("Manual fetching of JWKS started...");
+        try
+        {
+            var jwksResponse = httpClient.GetStringAsync($"{authority}/.well-known/openid-configuration/jwks").GetAwaiter().GetResult();
+            var keySet = new JsonWebKeySet(jwksResponse);
 
-       
-    });
+            // 3. Передаємо завантажені ключі в параметри валідації
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = true,
+                ValidIssuer = authority,
 
+                // Найголовніше: ми передаємо конкретний список ключів
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKeys = keySet.Keys,
+            };
+            Console.WriteLine($"Successfully loaded {keySet.Keys.Count} keys manually.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"CRITICAL ERROR loading keys: {ex.Message}");
+            // Якщо сервер лежить при старті - API не запуститься коректно, 
+            // але для розробки це краще, ніж гадати.
+        }
+    }
+
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"Auth Failed: {context.Exception.Message}");
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine("Token validated successfully!");
+            return Task.CompletedTask;
+        }
+    };
+}); 
 builder.Services.AddSwaggerGen(config =>
 {
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -118,8 +168,9 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseCustomExceptionHandler();
-app.UseCors("AllowAll");
+app.UseHttpsRedirection();
 app.UseRouting();
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -127,6 +178,21 @@ app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
 });
-
-
+// ТЕСТОВИЙ БЛОК - ВИДАЛИТИ ПІСЛЯ ПЕРЕВІРКИ
+using (var testClient = new HttpClient(new HttpClientHandler { ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator }))
+{
+    try
+    {
+        Console.WriteLine("Testing connection to IdentityServer...");
+        var response = await testClient.GetAsync("https://localhost:7050/.well-known/openid-configuration");
+        var content = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"Connection SUCCESS! Config found: {content.Substring(0, 50)}...");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Connection FAILED: {ex.Message}");
+        // Якщо тут помилка - проблема в Firewall, портах або IPv4/IPv6
+    }
+}
+// КІНЕЦЬ ТЕСТОВОГО БЛОКУ
 app.Run();

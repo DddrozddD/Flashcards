@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Flashcards.WebApi.Models.Flashcards
 {
-    public class UpdateFlashcardDto : IMapWith<UpdateFlashcardCommand>
+    public class UpdateFlashcardDto : IMapTo<UpdateFlashcardCommand>
     {
         [Required]
         public Guid Id { get; set; }

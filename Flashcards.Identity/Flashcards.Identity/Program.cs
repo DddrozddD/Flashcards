@@ -1,4 +1,4 @@
-using Flashcards.Identity;
+﻿using Flashcards.Identity;
 using Flashcards.Identity.Data;
 using Flashcards.Identity.Models;
 using Microsoft.AspNetCore.Identity;
@@ -35,12 +35,12 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(config => {
     .AddDefaultTokenProviders();
 
 builder.Services.AddIdentityServer()
+    .AddAspNetIdentity<AppUser>()
+    .AddInMemoryApiResources(Configuration.ApiResources)
     .AddInMemoryIdentityResources(Configuration.IdentityResources)
     .AddInMemoryApiScopes(Configuration.ApiScopes)
-    .AddInMemoryApiResources(Configuration.ApiResources)
     .AddInMemoryClients(Configuration.Clients)
-    .AddAspNetIdentity<AppUser>()
-    .AddDeveloperSigningCredential();
+    .AddDeveloperSigningCredential(filename: "identity_tempkey.jwk", persistKey: true);
 
 builder.Services.Configure<SendGridSenderOptions>(builder.Configuration.GetSection("SendGridOptions"));
 
@@ -54,9 +54,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-//app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors("AllowAll");
 app.UseIdentityServer();

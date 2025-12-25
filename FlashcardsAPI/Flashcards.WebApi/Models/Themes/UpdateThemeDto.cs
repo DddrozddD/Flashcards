@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Flashcards.WebApi.Models.Themes
 {
-    public class UpdateThemeDto : IMapWith<UpdateThemeCommand>
+    public class UpdateThemeDto : IMapTo<UpdateThemeCommand>
     {
         [Required]
         public Guid Id { get; set; }

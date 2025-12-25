@@ -10,6 +10,8 @@ namespace Flashcards.Application.Features.Themes.Queries.GetThemesList
 {
     public class ThemeLookupDto : IMapWith<Theme>
     {
+        public Guid Id { get; set; }
         public string Title { get; set; }
+        public string? Description { get; set; }
     }
 }

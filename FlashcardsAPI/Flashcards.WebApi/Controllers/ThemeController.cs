@@ -3,6 +3,7 @@ using Flashcards.Application.Features.Themes.Commands.CreateTheme;
 using Flashcards.Application.Features.Themes.Commands.UpdateTheme;
 using Flashcards.Application.Features.Themes.Queries.GetThemeDetails;
 using Flashcards.Application.Features.Themes.Queries.GetThemesList;
+using Flashcards.Domain;
 using Flashcards.WebApi.Models.Themes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +21,7 @@ namespace Flashcards.WebApi.Controllers
             _mapper = mapper;
         }
         /// <summary>
-        /// Gets all themes from a specific user.
+        /// Gets all themes from a specific user with pagination.
         /// </summary>
         /// <remarks>
         /// Example of request:
@@ -32,14 +33,17 @@ namespace Flashcards.WebApi.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetAllThemes(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetAllThemes(CancellationToken cancellationToken, [FromQuery] int page = 1, [FromQuery] int limit = 15)
         {
             var query = new GetThemesListQuery
             {
-                UserId = UserId
+                UserId = UserId,
+                Page = page,
+                Limit = limit
             };
 
             var result = await Mediator.Send(query, cancellationToken);
+               
             return Ok(result);
         }
 
@@ -61,7 +65,7 @@ namespace Flashcards.WebApi.Controllers
             var query = new GetThemeDetailsQuery
             {
                 Id = Id,
-                UserId = UserId
+                UserId =UserId
             };
             var result = await Mediator.Send(query, cancellationToken);
             return Ok(result);
@@ -87,7 +91,7 @@ namespace Flashcards.WebApi.Controllers
         public async Task<IActionResult> CreateDefaultThemes([FromBody] CreateThemeDto createThemeDto, CancellationToken cancellationToken)
         {
             var command = _mapper.Map<CreateThemeCommand>(createThemeDto);
-        
+            command.UserId =UserId;
             var themeId = await Mediator.Send(command, cancellationToken);
             return Ok(themeId);
         }
@@ -128,7 +132,7 @@ namespace Flashcards.WebApi.Controllers
         /// <returns>Returns NoContent</returns>
         /// <response code="201">Success</response>
         /// <response code="401">User is anauthorize</response>
-        [HttpDelete]
+        [HttpDelete("{Id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> DeleteTheme(Guid Id, CancellationToken cancellationToken)

@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Flashcards.WebApi.Models.Flashcards
 {
-    public class CreateFlashcardDto : IMapWith<CreateFlashcardCommand>
+    public class CreateFlashcardDto : IMapTo<CreateFlashcardCommand>
     {
         [Required]
         public string FirstValue { get; set; }

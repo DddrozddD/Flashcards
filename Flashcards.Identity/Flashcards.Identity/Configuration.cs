@@ -17,8 +17,6 @@ namespace Flashcards.Identity
             {
                 new ApiScope("FlashcardsWebApi", "Flashcards Web API")
             };
-
-        // !!! ДОДАНО ЦЕЙ БЛОК (ВАЖЛИВО ДЛЯ ПОЛЯ 'aud') !!!
         public static IEnumerable<ApiResource> ApiResources =>
             new List<ApiResource>
             {
@@ -45,7 +43,7 @@ namespace Flashcards.Identity
                    {
                        IdentityServerConstants.StandardScopes.OpenId,
                        IdentityServerConstants.StandardScopes.Profile,
-                       "FlashcardsWebApi" // <-- ВИПРАВЛЕНО (було з пробілами)
+                       "FlashcardsWebApi" 
                    },
                    AllowAccessTokensViaBrowser = true
                },
@@ -55,17 +53,17 @@ namespace Flashcards.Identity
                      ClientName = "Flashcards API Swagger UI",
 
 
-                    AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
+                     AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
                      RequireClientSecret = false,
                      RequirePkce = true,
     
-                     RedirectUris = { "http://localhost:5140/swagger/oauth2-redirect.html" },
-                     AllowedCorsOrigins = { "http://localhost:5140" },
+                     RedirectUris = { "https://localhost:7172/swagger/oauth2-redirect.html" },
+                     AllowedCorsOrigins = { "https://localhost:7172" },
                      AllowedScopes =
                      {
                           IdentityServerConstants.StandardScopes.OpenId,
                           IdentityServerConstants.StandardScopes.Profile,
-                          "FlashcardsWebApi" // <-- ВИПРАВЛЕНО (було з пробілами)
+                          "FlashcardsWebApi"
                      },
                      AllowAccessTokensViaBrowser = true
                }

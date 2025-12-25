@@ -9,6 +9,7 @@ namespace Flashcards.Application.Features.Themes.Queries.GetThemesList
 {
     public class ThemeListVm
     {
-        public IReadOnlyCollection<ThemeLookupDto> Themes { get; set; } 
+        public IReadOnlyCollection<ThemeLookupDto> Themes { get; set; }
+        public int totalCount { get; set;}
     }
 }

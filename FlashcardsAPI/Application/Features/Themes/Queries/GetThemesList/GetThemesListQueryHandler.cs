@@ -23,9 +23,9 @@ namespace Flashcards.Application.Features.Themes.Queries.GetThemesList
 
         public async Task<ThemeListVm> Handle(GetThemesListQuery request, CancellationToken cancellationToken)
         {
-            var query = await _context.Themes.Where(t => t.UserId == request.UserId).ProjectTo<ThemeLookupDto>(_mapper.ConfigurationProvider).ToListAsync();
-
-            return new ThemeListVm { Themes = query };
+            var query = await _context.Themes.Where(t => t.UserId == request.UserId).Skip((request.Page - 1) * request.Limit).Take(request.Limit).ProjectTo<ThemeLookupDto>(_mapper.ConfigurationProvider).ToListAsync();
+            var themesCount = await _context.Themes.CountAsync(t => t.UserId == request.UserId);
+            return new ThemeListVm { Themes = query, totalCount = themesCount };
         } 
     }
 }
